@@ -60,5 +60,6 @@ L'ensemble de l'analyse est réalisé directement dans votre navigateur grâce �
 
 Pour toute question, suggestion ou simplement pour dire bonjour :
 
-*   **GitHub** : [Syckaa](https://github.com/Syckaa)
+*   **GitHub** : [Sycka](https://github.com/Syckaa)
+
 *   **Revolt** : `Sycka#6789`
