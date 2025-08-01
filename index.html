@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyckaLinkAnalyse</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="shortcut icon" href="https://image.noelshack.com/fichiers/2025/31/5/1754082232-dd53a508-bc77-4426-bf6f-4758e6f9d9d9.jpg
+    " type="image/x-icon">
+
+    <style>
+        :root {
+            --bg-color: #111827; --card-color: #1F2937; --border-color: #374151; --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF; --accent-color: #10B981; --accent-hover: #059669; --error-color: #F87171; --warning-color: #FBBF24;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 800px; }
+        header { text-align: center; margin-bottom: 2.5rem; animation: fadeInDown 0.6s ease-out; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        header p { font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+        .input-group { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+        #urlInput { flex-grow: 1; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-color); color: var(--text-primary); outline: none; transition: all 0.2s ease; }
+        #urlInput:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3); }
+        #analyzeBtn { padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; color: #fff; background-color: var(--accent-color); border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+        #analyzeBtn:hover { background-color: var(--accent-hover); }
+        #loader { display: none; margin: 3rem auto; width: 48px; height: 48px; border: 5px solid var(--border-color); border-bottom-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #results-container { display: flex; flex-direction: column; gap: 1.5rem; opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        #results-container.visible { opacity: 1; transform: translateY(0); }
+        .result-card { background-color: var(--card-color); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background-color: rgba(0,0,0,0.1); border-bottom: 1px solid var(--border-color); }
+        .card-header h3 { margin: 0; font-size: 1rem; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 0.75rem; }
+        .card-content { padding: 1.5rem; }
+        .preview-container { display: flex; align-items: flex-start; gap: 1rem; }
+        .preview-icon { width: 64px; height: 64px; min-width: 64px; border-radius: 8px; border: 1px solid var(--border-color); object-fit: contain; background-color: rgba(255,255,255,0.05); }
+        .preview-text h2 { margin-top: 0; margin-bottom: 0.25rem; font-size: 1.125rem; font-weight: 600; }
+        .preview-text p { margin: 0; color: var(--text-secondary); line-height: 1.6; }
+        .preview-text .site-link { display: inline-block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; }
+        .data-list { list-style: none; padding: 0; margin: 0; }
+        .data-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        .data-list li:last-child { border-bottom: none; }
+        .data-list .key { color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; }
+        .data-list .value { font-weight: 500; text-align: right; max-width: 70%; word-break: break-all; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+        .tag { background-color: var(--border-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; font-weight: 500; }
+        .check-icon { margin-right: 8px; }
+        .check-icon.fa-check-circle { color: var(--accent-color); }
+        .check-icon.fa-times-circle { color: var(--error-color); }
+        .link-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; max-height: 300px; overflow-y: auto; }
+        .link-list li { display: flex; gap: 0.75rem; padding: 0.5rem 0.2rem; border-bottom: 1px solid var(--border-color); }
+        .link-list li:last-child { border-bottom: none; }
+        .link-list .fa-solid, .link-list .fa-brands { color: var(--text-secondary); margin-top: 4px; width: 20px; text-align: center; }
+        .link-list .link-text { font-weight: 500; }
+        .link-list .link-href { color: var(--text-secondary); word-break: break-all; }
+        .card-content h4 { font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--text-secondary); }
+        .image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem; max-height: 350px; overflow-y: auto; padding-top: 0.5rem; }
+        .gallery-item { text-align: center; }
+        .gallery-item img { width: 100%; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-color); }
+        .gallery-item p { margin: 0.5rem 0 0 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; word-break: break-word; }
+        .gallery-item .missing-alt { color: var(--warning-color); font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>SyckaLinkAnalyse</h1><p>L'analyse la plus complète, en une seule page.</p></header>
+        <div class="input-group">
+            <input type="text" id="urlInput" placeholder="lemonde.fr"><button id="analyzeBtn">Analyser</button>
+        </div>
+        <div id="loader"></div>
+        <main id="results-container"></main>
+    </div>
+
+    <script>
+    const urlInput = document.getElementById('urlInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const resultsContainer = document.getElementById('results-container');
+    const loader = document.getElementById('loader');
+
+    const PROXIES = [
+        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+    ];
+
+    const SOCIAL_DETECTORS = [
+        { name: 'Discord', icon: 'fa-brands fa-discord', patterns: [/discord\.gg\/[a-zA-Z0-9]+/, /discord\.com\/invite\/[a-zA-Z0-9]+/] },
+        { name: 'YouTube', icon: 'fa-brands fa-youtube', patterns: [/youtube\.com\/(c\/|channel\/|user\/|@)/] },
+        { name: 'TikTok', icon: 'fa-brands fa-tiktok', patterns: [/tiktok\.com\/@[a-zA-Z0-9_.]+/] },
+        { name: 'Twitter', icon: 'fa-brands fa-twitter', patterns: [/twitter\.com\/(?!intent|share|search)/] },
+        { name: 'Facebook', icon: 'fa-brands fa-facebook', patterns: [/facebook\.com\/(?!sharer|dialog|plugins)/] },
+        { name: 'Instagram', icon: 'fa-brands fa-instagram', patterns: [/instagram\.com\/[a-zA-Z0-9_.]+/] },
+        { name: 'LinkedIn', icon: 'fa-brands fa-linkedin', patterns: [/linkedin\.com\/(in|company)\//] },
+        { name: 'GitHub', icon: 'fa-brands fa-github', patterns: [/github\.com\/[a-zA-Z0-9_-]+/]},
+        { name: 'Twitch', icon: 'fa-brands fa-twitch', patterns: [/twitch\.tv\/[a-zA-Z0-9_]+/] }
+    ];
+
+    const escapeHtml = (unsafe) => {
+        if (!unsafe) return '';
+        return unsafe.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/'/g, "'");
+    };
+
+    const renderPartialResults = (url, errors) => {
+        let errorList = errors.map((e, i) => `<li>Essai ${i+1}: ${e}</li>`).join('');
+        resultsContainer.innerHTML = `<article class="result-card" style="border-color: var(--warning-color);"><div class="card-header"><h3><i class="fa-solid fa-shield-halved"></i>Analyse limitée</h3></div><div class="card-content"><p>Impossible de récupérer le contenu.</p><ul style="font-size:0.8em;padding-left:20px;">${errorList}</ul></div></article>`;
+    };
+
+    const renderResults = (url, headers, doc) => {
+        const get = (selector, attribute = 'content') => doc.querySelector(selector)?.getAttribute(attribute) || null;
+        const count = (selector) => doc.querySelectorAll(selector).length;
+        const check = (value) => value ? `<i class="check-icon fa-solid fa-check-circle"></i><span class="value">${escapeHtml(value)}</span>` : `<i class="check-icon fa-solid fa-times-circle"></i><span class="value">Non</span>`;
+
+        const ogTitle = get('meta[property="og:title"]') || doc.title || 'Titre non trouvé';
+        const ogDescription = get('meta[property="og:description"]') || get('meta[name="description"]') || 'Description non trouvée';
+        let iconHref = get('link[rel="icon"]', 'href') || get('link[rel="shortcut icon"]', 'href') || get('meta[property="og:image"]') || '/favicon.ico';
+        const displayIconUrl = new URL(iconHref, url.origin).href;
+
+        const seo = { title: doc.title, description: get('meta[name="description"]'), lang: doc.documentElement.lang, canonical: get('link[rel="canonical"]', 'href'), robots: get('meta[name="robots"]'), headings: { h1: count('h1'), h2: count('h2'), h3: count('h3') } };
+        const socialMeta = { ogType: get('meta[property="og:type"]'), twitterCard: get('meta[name="twitter:card"]'), jsonLd: count('script[type="application/ld+json"]') };
+        const tech = { server: headers.get('server') || 'Inconnu', technologies: [...new Set([headers.get('x-powered-by'), get('meta[name="generator"]'), (doc.body.innerHTML.includes('wp-content') && 'WordPress'), (doc.body.innerHTML.includes('/_next/static') && 'Next.js')])].filter(Boolean), scripts: { total: count('script'), async: count('script[async]'), defer: count('script[defer]') }, stylesheets: count('link[rel="stylesheet"]') };
+        const security = { csp: headers.get('Content-Security-Policy'), hsts: headers.get('Strict-Transport-Security'), xfo: headers.get('X-Frame-Options') };
+
+        const allLinks = Array.from(doc.querySelectorAll('a'));
+        const internalLinks = [], externalLinks = [], foundSocials = new Map();
+        allLinks.forEach(link => {
+            if (!link.href) return;
+            let isSocial = false;
+            for (const detector of SOCIAL_DETECTORS) {
+                if (detector.patterns.some(pattern => pattern.test(link.href))) {
+                    if (!foundSocials.has(detector.name)) foundSocials.set(detector.name, { name: detector.name, icon: detector.icon, href: link.href });
+                    isSocial = true; break;
+                }
+            }
+            if (!isSocial) {
+                try {
+                    const data = { text: link.innerText.trim() || link.href, href: link.href };
+                    new URL(link.href).hostname === url.hostname ? internalLinks.push(data) : externalLinks.push(data);
+                } catch(e) {/* ignore */}
+            }
+        });
+        const allImages = Array.from(doc.querySelectorAll('img')).map(img => ({ src: new URL(img.getAttribute('src'), url.origin).href, alt: img.getAttribute('alt') || '' })).filter(img => img.src);
+
+        resultsContainer.innerHTML = `
+            <article class="result-card"><div class="card-content preview-container"><img src="${escapeHtml(displayIconUrl)}" alt="Icône" class="preview-icon" onerror="this.style.display='none'"><div class="preview-text"><span class="site-link">${escapeHtml(url.hostname)}</span><h2>${escapeHtml(ogTitle)}</h2><p>${escapeHtml(ogDescription)}</p></div></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-hashtag"></i>Réseaux Sociaux & Contact</h3></div><div class="card-content"><ul class="link-list">${foundSocials.size > 0 ? Array.from(foundSocials.values()).map(s => `<li><i class="${s.icon}"></i><div><div class="link-text">${s.name}</div><div class="link-href">${escapeHtml(s.href)}</div></div></li>`).join('') : '<li>Aucun réseau social principal détecté.</li>'}</ul></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-magnifying-glass-chart"></i>Analyse SEO</h3></div><div class="card-content"><ul class="data-list"><li><span class="key">Titre</span><span class="value">${escapeHtml(seo.title)}</span></li><li><span class="key">Description</span>${check(seo.description)}</li><li><span class="key">URL Canonique</span>${check(seo.canonical)}</li><li><span class="key">Meta Robots</span><span class="value">${escapeHtml(seo.robots || 'N/A')}</span></li><li><span class="key">Titres</span><span class="value">H1:${seo.headings.h1} H2:${seo.headings.h2} H3:${seo.headings.h3}</span></li></ul></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-star"></i>Rich Results & Partage</h3></div><div class="card-content"><ul class="data-list"><li><span class="key">Open Graph Type</span><span class="value">${escapeHtml(socialMeta.ogType || 'N/A')}</span></li><li><span class="key">Twitter Card</span><span class="value">${escapeHtml(socialMeta.twitterCard || 'N/A')}</span></li><li><span class="key">JSON-LD</span>${check(socialMeta.jsonLd > 0 ? `${socialMeta.jsonLd} script(s)` : false)}</li></ul></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-microchip"></i>Analyse Technique</h3></div><div class="card-content"><ul class="data-list"><li><span class="key">Serveur</span><span class="value">${escapeHtml(tech.server)}</span></li><li><span class="key">Technologies</span><div class="tag-list">${tech.technologies.length > 0 ? tech.technologies.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('') : '<span>N/A</span>'}</div></li><li><span class="key">Scripts</span><span class="value">${tech.scripts.total} (A:${tech.scripts.async} D:${tech.scripts.defer})</span></li><li><span class="key">Styles</span><span class="value">${tech.stylesheets}</span></li></ul></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-shield-halved"></i>En-têtes de Sécurité</h3></div><div class="card-content"><ul class="data-list"><li><span class="key">Content-Security-Policy</span>${check(security.csp ? 'Présent' : false)}</li><li><span class="key">Strict-Transport-Security</span>${check(security.hsts ? 'Présent' : false)}</li><li><span class="key">X-Frame-Options</span>${check(security.xfo)}</li></ul></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-link"></i>Analyse des Liens</h3></div><div class="card-content"><h4>Internes (${internalLinks.length})</h4><ul class="link-list">${internalLinks.length > 0 ? internalLinks.slice(0, 10).map(l => `<li><i class="fa-solid fa-arrow-right"></i><div>${escapeHtml(l.href)}</div></li>`).join('') : '<li>Aucun.</li>'}</ul><hr style="border-color:var(--border-color);margin:1rem 0;"><h4>Externes (${externalLinks.length})</h4><ul class="link-list">${externalLinks.length > 0 ? externalLinks.slice(0, 10).map(l => `<li><i class="fa-solid fa-up-right-from-square"></i><div>${escapeHtml(l.href)}</div></li>`).join('') : '<li>Aucun.</li>'}</ul></div></article>
+            <article class="result-card"><div class="card-header"><h3><i class="fa-solid fa-images"></i>Galerie d'Images (${allImages.length})</h3></div><div class="card-content"><div class="image-gallery">${allImages.length > 0 ? allImages.slice(0, 18).map(img => `<div class="gallery-item"><img src="${escapeHtml(img.src)}" loading="lazy"><p>${img.alt ? escapeHtml(img.alt) : '<span class="missing-alt">ALT manquant</span>'}</p></div>`).join('') : '<p>Aucune image.</p>'}</div></div></article>
+        `;
+    };
+
+    const analyze = async () => {
+        let urlString = urlInput.value.trim();
+        if (!urlString) return;
+        if (!/^https?:\/\//i.test(urlString)) { urlString = 'https://' + urlString; urlInput.value = urlString; }
+        
+        resultsContainer.innerHTML = '';
+        resultsContainer.classList.remove('visible');
+        loader.style.display = 'block';
+
+        let url;
+        try { url = new URL(urlString); } catch (e) {
+            loader.style.display = 'none';
+            resultsContainer.innerHTML = `<div class="result-card" style="border-color: var(--error-color);"><div class="card-content" style="color:var(--error-color)">Erreur: URL invalide.</div></div>`;
+            resultsContainer.classList.add('visible');
+            return;
+        }
+        
+        let response = null, errors = [];
+        for (const proxyBuilder of PROXIES) {
+            const proxyUrl = proxyBuilder(urlString);
+            try {
+                const fetchResponse = await fetch(proxyUrl);
+                if (!fetchResponse.ok) throw new Error(`Statut HTTP ${fetchResponse.status}`);
+                response = fetchResponse;
+                break;
+            } catch (error) { errors.push(error.message); }
+        }
+        
+        loader.style.display = 'none';
+        if (response) {
+            const html = await response.text();
+            const headers = response.headers;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            renderResults(url, headers, doc);
+        } else {
+            renderPartialResults(url, errors);
+        }
+        resultsContainer.classList.add('visible');
+    };
+
+    analyzeBtn.addEventListener('click', analyze);
+    urlInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') analyze(); });
+    </script>
+</body>
+</html>
